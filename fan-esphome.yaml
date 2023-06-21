@@ -1,0 +1,146 @@
+esphome:
+  name: fan
+  friendly_name: Fan
+  on_boot:
+    # Press all the buttons to get them into a known state
+    then:
+      - script.execute:
+          id: button_press
+          pin_number: 21
+      - script.execute:
+          id: button_press
+          pin_number: 10
+      - script.execute:
+          id: button_press
+          pin_number: 8
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Fan Fallback Hotspot"
+    password: !secret ap_password
+
+captive_portal:
+
+# Define the raw voltage sensor, each of them collects 50 samples over 0.5s
+# and then takes 20% percentile from the samples. This way, we get a decent
+# measurement of the low peak of the 60 Hz wave.
+sensor:
+  - id: low_speed_sensor
+    platform: adc
+    pin: 4
+    name: "Low Speed"
+    update_interval: 0.01s
+    attenuation: auto
+    filters:
+      - quantile:
+          window_size: 50
+          send_every: 50
+          quantile: .2
+  - id: medium_speed_sensor
+    platform: adc
+    pin: 3
+    name: "Medium Speed"
+    update_interval: 0.01s
+    attenuation: auto
+    filters:
+      - quantile:
+          window_size: 50
+          send_every: 50
+          quantile: .2
+  - id: high_speed_sensor
+    platform: adc
+    pin: 2
+    name: "High Speed"
+    update_interval: 0.01s
+    attenuation: auto
+    filters:
+      - quantile:
+          window_size: 50
+          send_every: 50
+          quantile: .2
+
+# For each of the raw sensors, define a binary detector
+# by using a simple threshold. Note that all of them are inverted
+# as lower voltage means that the fan is actually using that speed mode.
+binary_sensor:
+  - id: low_speed_detector
+    platform: analog_threshold
+    name: "Low Speed Detector"
+    sensor_id: low_speed_sensor
+    threshold: 1.25
+    filters:
+      - invert:
+  - id: medium_speed_detector
+    platform: analog_threshold
+    name: "Medium Speed Detector"
+    sensor_id: medium_speed_sensor
+    threshold: 1.25
+    filters:
+      - invert:
+  - id: high_speed_detector
+    platform: analog_threshold
+    name: "High Speed Detector"
+    sensor_id: high_speed_sensor
+    threshold: 1.25
+    filters:
+      - invert:
+
+# Helper script for "pressing" a button that is connected to the given pin.
+script:
+  - id: button_press
+    parameters:
+      pin_number: int
+    then:
+      - logger.log:
+          format: "Button press pin: %d"
+          args:
+            - !lambda pin_number
+      - lambda: |-
+          digitalWrite(pin_number, HIGH);
+          pinMode(pin_number, OUTPUT);
+          delay(100);
+          pinMode(pin_number, INPUT);
+
+# Actually define what button is connected to what pin and call the script above.
+button:
+  - platform: template
+    name: Fan Power Button
+    id: fan_power_button
+    on_press:
+      - script.execute:
+          id: button_press
+          pin_number: 10
+  - platform: template
+    name: Fan Speed Button
+    id: fan_speed_button
+    on_press:
+      - script.execute:
+          id: button_press
+          pin_number: 8
+  - platform: template
+    name: Fan Swing Button
+    id: fan_swing_button
+    on_press:
+      - script.execute:
+          id: button_press
+          pin_number: 21

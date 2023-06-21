@@ -1,0 +1,131 @@
+# Because there is no sensor for the oscillation, we are going to remember
+# the state ina boolean instead.
+input_boolean:
+  fan_oscillating:
+
+template:
+  sensor:
+    # Based on the state of the binary detectors, define a new sensor
+    # that defines the fan speed.
+    - name: "Bedroom Fan Speed"
+      unique_id: bedroom_fan_speed
+      state: >
+        {% if states('binary_sensor.fan_high_speed_detector') == "on" %}
+          high
+        {% elif states('binary_sensor.fan_medium_speed_detector') == "on" %}
+          medium
+        {% else %}
+          low
+        {% endif %}
+  binary_sensor:
+    # If one of the speed detectors are on that means that the fan is on.
+    - name: "Bedroom Fan State"
+      unique_id: bedroom_fan_state
+      state: >
+        {{
+          states('binary_sensor.fan_high_speed_detector') == "on"
+          or states('binary_sensor.fan_medium_speed_detector') == "on"
+          or states('binary_sensor.fan_low_speed_detector') == "on"
+        }}
+
+# Define the template fan, see https://www.home-assistant.io/integrations/fan.template/
+fan:
+  - platform: template
+    fans:
+      bedroom_fan:
+        friendly_name: "Bedroom Fan"
+        value_template: "{{ states('binary_sensor.bedroom_fan_state') }}"
+        preset_mode_template: "{{ states('sensor.bedroom_fan_speed') }}"
+        oscillating_template: >
+          {% if states('input_boolean.fan_oscillating') == "on" %}
+            true
+          {% else %}
+            false
+          {% endif %}
+        percentage_template: >
+          {% if states('binary_sensor.bedroom_fan_state') == "off" %}0
+          {% elif states('sensor.bedroom_fan_speed') == "low" %}33
+          {% elif states('sensor.bedroom_fan_speed') == "medium" %}66
+          {% else %}100
+          {% endif %}
+        turn_on:
+          service: script.fan_on
+        turn_off:
+          service: script.fan_off
+        set_preset_mode:
+          service: script.fan_set_preset_mode
+          data:
+            preset_mode: "{{ preset_mode }}"
+        set_oscillating:
+          service: script.fan_oscillating
+          data:
+            oscillating: "{{ oscillating }}"
+        preset_modes:
+          - "low"
+          - "medium"
+          - "high"
+        speed_count: 3
+
+script:
+  fan_on:
+    alias: Fan On
+    icon: mdi:fan
+    sequence:
+      # Keep pressing the power button until the fan state is on
+      # (1 second delay between the presses), sometimes it takes
+      # multiple presses to start the fan.
+      - repeat:
+          until:
+            - condition: state
+              entity_id: binary_sensor.bedroom_fan_state
+              state: "on"
+          sequence:
+            - service: button.press
+              target:
+                entity_id: button.fan_fan_power_button
+            - delay:
+                seconds: 1
+  fan_off:
+    alias: Fan Off
+    icon: mdi:fan
+    sequence:
+      - repeat:
+          until:
+            - condition: state
+              entity_id: binary_sensor.bedroom_fan_state
+              state: "off"
+          sequence:
+            - service: button.press
+              target:
+                entity_id: button.fan_fan_power_button
+            - delay:
+                seconds: 1
+  fan_set_preset_mode:
+    alias: Fan Set Preset Mode
+    icon: mdi:fan
+    sequence:
+      # Keep pressing the "speed" button until we reach the desired speed.
+      - repeat:
+          until:
+            - condition: template
+              value_template: "{{ states('sensor.bedroom_fan_speed') == preset_mode }}"
+          sequence:
+            - service: button.press
+              target:
+                entity_id: button.fan_fan_speed_button
+            - delay:
+                seconds: 1
+  fan_oscillating:
+    alias: Fan Oscillating
+    icon: mdi:fan
+    sequence:
+      - if:
+          - condition: template
+            value_template: "{{ states('input_boolean.fan_oscillating') != oscillating }}"
+        then:
+          - service: button.press
+            target:
+              entity_id: button.fan_fan_swing_button
+          - service: input_boolean.toggle
+            target:
+              entity_id: input_boolean.fan_oscillating
