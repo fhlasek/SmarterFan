@@ -18,11 +18,7 @@ mobile app or pretty much any other controlling interface.
 In this section we describe how the hardware is connected in
 order to control the fan.
 
-<figure>
-  <img src="img/prototype.jpg" height="250">
-  <img src="img/prototype2.jpg" height="250">
-  <figcaption>Breadboard prototypes</figcaption>
-</figure>
+<img src="img/prototype.jpg" height="250"> <img src="img/prototype2.jpg" height="250">
 
 Firstly, the microcontroller has to be powered. Conveniently, the fan's ICs
 also need DC power (5V) and the positive and the negative pins can be easily found
@@ -51,16 +47,7 @@ Unfortunately, this microcontroller does not have any more analog I/O pins
 that can be used therefore we are not able to observe the state of the
 oscillation.
 
-<figure>
-  <img src="img/final.jpg" height="250">
-  <img src="img/detail.jpg" height="250">
-  <figcaption>Final product soldered on a prototype PCB</figcaption>
-</figure>
-
-<figure>
-  <img src="img/deployed.jpg" height="250">
-  <figcaption>It all fits nicely inside of the fan</figcaption>
-</figure>
+<img src="img/final.jpg" height="250"> <img src="img/detail.jpg" height="250"> <img src="img/deployed.jpg" height="250">
 
 ## Software Setup
 
@@ -78,11 +65,8 @@ pin that drives a motor of the fan has an oscillating shape at 60 Hz
 (between 4.0V and 4.7V).
 On the other hand, an inactive pin has a pretty much flat (with some noise)
 pattern.
-<figure>
-  <img src="img/oscilloscope_power_on.png" height="250">
-  <img src="img/oscilloscope_power_off.png" height="250">
-  <figcaption>Active and inactive pin voltage patterns</figcaption>
-</figure>
+
+<img src="img/oscilloscope_power_on.png" height="350"> <img src="img/oscilloscope_power_off.png" height="350">
 
 To measure the state of the fan, we configured an adc sensor in esphome
 to sample the voltage 50 times at 100 Hz and then take 20th percentile.
@@ -127,7 +111,7 @@ We add a small delay between consecutive button presses to allow for sensors
 to observe the changed state.
 
 <figure>
-  <img src="img/home_assistant_ui.png" height="250">
+  <img src="img/home_assistant_ui.png" height="350">
   <figcaption>Finally, the fan can be controlled using the Home Assistant UI, or other integrations like Google Assistant, Alexa or HomeKit. The state is also updated if the buttons are manually pressed or controlled by the IR remote.</figcaption>
 </figure>
 
