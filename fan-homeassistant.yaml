@@ -60,6 +60,10 @@ fan:
           service: script.fan_oscillating
           data:
             oscillating: "{{ oscillating }}"
+        set_percentage:
+          service: script.fan_set_percentage
+          data:
+            percentage: "{{ percentage }}"
         preset_modes:
           - "low"
           - "medium"
@@ -129,3 +133,34 @@ script:
           - service: input_boolean.toggle
             target:
               entity_id: input_boolean.fan_oscillating
+  fan_set_percentage:
+    alias: Fan Set Percentage
+    icon: mdi:fan
+    sequence:
+      - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ percentage == 0 }}"
+          sequence:
+            - service: script.fan_off
+        - conditions:
+            - condition: template
+              value_template: "{{ percentage == 33 }}"
+          sequence:
+            - service: script.fan_set_preset_mode
+              data:
+                preset_mode: low
+        - conditions:
+            - condition: template
+              value_template: "{{ percentage == 66 }}"
+          sequence:
+            - service: script.fan_set_preset_mode
+              data:
+                preset_mode: medium
+        - conditions:
+            - condition: template
+              value_template: "{{ percentage == 100 }}"
+          sequence:
+            - service: script.fan_set_preset_mode
+              data:
+                preset_mode: high
