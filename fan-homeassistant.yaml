@@ -1,5 +1,5 @@
 # Because there is no sensor for the oscillation, we are going to remember
-# the state ina boolean instead.
+# the state in a boolean instead.
 input_boolean:
   fan_oscillating:
 
